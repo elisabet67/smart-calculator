@@ -2,6 +2,9 @@
 
 실시간 환율 조회/계산과 9대 분류 단위 변환을 완벽하게 지원하는 스마트 다기능 전자계산기 프로그램입니다.
 
+🌐 **웹사이트 바로가기 (설치 없이 브라우저에서 바로 사용):**  
+👉 **[https://elisabet67.github.io/smart-calculator/](https://elisabet67.github.io/smart-calculator/)**
+
 ---
 
 ## 🚀 빠른 실행 방법
