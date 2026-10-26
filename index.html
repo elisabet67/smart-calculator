@@ -32,10 +32,12 @@
       background-color: var(--bg);
       color: var(--text);
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      justify-content: flex-start;
       align-items: center;
       min-height: 100vh;
-      padding: 20px 10px;
+      padding: 30px 12px 60px 12px;
+      gap: 18px;
     }
 
     .app-container {
@@ -385,6 +387,278 @@
       font-weight: 700;
       color: var(--accent);
     }
+
+    /* 댓글 섹션 스타일 */
+    .comments-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .comments-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comments-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .comments-title h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .admin-menu {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-admin {
+      background: #25252f;
+      border: 1px solid var(--border);
+      color: var(--subtext);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-admin:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .admin-badge {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--success);
+      color: var(--success);
+      font-size: 0.72rem;
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+
+    .admin-panel {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px dashed var(--danger);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+
+    .btn-admin-danger {
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .btn-admin-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-admin-logout {
+      background: #373743;
+      color: #cbd5e1;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      margin-left: 6px;
+    }
+
+    .comment-form {
+      background: #161619;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .comment-form-row {
+      margin-bottom: 8px;
+    }
+
+    .comment-form-row input[type="text"] {
+      width: 100%;
+      background: #22222a;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    .comment-form-row textarea {
+      width: 100%;
+      background: #22222a;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      resize: vertical;
+      min-height: 55px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .comment-form-row input:focus, .comment-form-row textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .comment-form-action {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .char-count {
+      font-size: 0.75rem;
+      color: var(--subtext);
+    }
+
+    .btn-submit {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-submit:hover {
+      background: var(--accent-hover);
+    }
+
+    .comments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 380px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .comment-item {
+      background: #17171b;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 13px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .comment-item:hover {
+      border-color: #3f3f4e;
+    }
+
+    .comment-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .comment-author-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .comment-avatar {
+      width: 22px;
+      height: 22px;
+      background: #2d2d38;
+      color: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .comment-author {
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+    }
+
+    .comment-date {
+      font-size: 0.72rem;
+      color: var(--subtext);
+    }
+
+    .comment-body {
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      margin-left: 8px;
+      transition: all 0.15s;
+    }
+
+    .btn-delete:hover {
+      background: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+    }
+
+    .no-comments {
+      text-align: center;
+      padding: 24px 0;
+      color: var(--subtext);
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
@@ -554,6 +828,47 @@
     <div class="table-container" style="max-height: 400px;">
       <div id="historyList"></div>
     </div>
+  </div>
+</div>
+
+<!-- 댓글 및 방명록 섹션 (계산기 바로 아래) -->
+<div class="comments-container">
+  <div class="comments-header">
+    <div class="comments-title">
+      <h3>💬 댓글 <span id="commentCount" class="badge">0</span></h3>
+    </div>
+    <div class="admin-menu">
+      <button id="adminToggleBtn" class="btn-admin" onclick="toggleAdminMode()">🔐 관리자 메뉴</button>
+      <span id="adminBadge" class="admin-badge" style="display:none;">🔓 관리자 활성</span>
+    </div>
+  </div>
+
+  <!-- 관리자 전용 일괄 제어 패널 (비밀번호 1234 인증 시 표시) -->
+  <div id="adminPanel" class="admin-panel" style="display:none;">
+    <span>⚡ <strong>관리자 모드 (비밀번호 1234 인증됨)</strong></span>
+    <div>
+      <button class="btn-admin-danger" onclick="adminDeleteAll()">🗑️ 댓글 전체삭제</button>
+      <button class="btn-admin-logout" onclick="adminLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 댓글 작성 폼 -->
+  <div class="comment-form">
+    <div class="comment-form-row">
+      <input type="text" id="commentAuthor" placeholder="작성자 닉네임 (미입력시 익명)" maxlength="15">
+    </div>
+    <div class="comment-form-row">
+      <textarea id="commentText" placeholder="계산기 후기나 의견을 자유롭게 남겨보세요..." rows="2" maxlength="300" oninput="updateCharCount()"></textarea>
+    </div>
+    <div class="comment-form-action">
+      <span class="char-count"><span id="charCount">0</span>/300</span>
+      <button class="btn-submit" onclick="addComment()">✍️ 댓글 등록</button>
+    </div>
+  </div>
+
+  <!-- 댓글 목록 -->
+  <div id="commentsList" class="comments-list">
+    <!-- 동적 렌더링 -->
   </div>
 </div>
 
@@ -1055,9 +1370,228 @@
     renderHistory();
   }
 
+  // ==========================================
+  // 5. 댓글 및 관리자 삭제 기능 (비밀번호: 1234)
+  // ==========================================
+  const ADMIN_PASSWORD = "1234";
+  let isAdminMode = false;
+
+  const defaultComments = [
+    {
+      id: "c_sample_1",
+      author: "환율계산러",
+      text: "환율 조회가 실시간으로 돼서 너무 편하고 좋아요! 👍",
+      date: "2026. 10. 26. 19:30"
+    },
+    {
+      id: "c_sample_2",
+      author: "부동산왕",
+      text: "평수를 m²로 바로 변환해줘서 자주 쓸 것 같습니다. 감사합니다!",
+      date: "2026. 10. 26. 19:42"
+    }
+  ];
+
+  function getComments() {
+    try {
+      const stored = localStorage.getItem("smart_calc_comments");
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    // 저장된 게 없으면 기본 댓글 저장 후 반환
+    saveComments(defaultComments);
+    return defaultComments;
+  }
+
+  function saveComments(list) {
+    try {
+      localStorage.setItem("smart_calc_comments", JSON.stringify(list));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function formatCurrentTime() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    return `${y}. ${m}. ${d}. ${hh}:${mm}`;
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function updateCharCount() {
+    const text = document.getElementById("commentText").value;
+    document.getElementById("charCount").textContent = text.length;
+  }
+
+  function addComment() {
+    const authorInput = document.getElementById("commentAuthor");
+    const textInput = document.getElementById("commentText");
+
+    const author = authorInput.value.trim() || "익명";
+    const text = textInput.value.trim();
+
+    if (!text) {
+      alert("댓글 내용을 입력해주세요!");
+      textInput.focus();
+      return;
+    }
+
+    const newComment = {
+      id: "c_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+      author: author,
+      text: text,
+      date: formatCurrentTime()
+    };
+
+    const comments = getComments();
+    comments.unshift(newComment);
+    saveComments(comments);
+
+    textInput.value = "";
+    document.getElementById("charCount").textContent = "0";
+    renderComments();
+  }
+
+  function toggleAdminMode() {
+    if (isAdminMode) {
+      const logout = confirm("현재 관리자 모드입니다. 로그아웃 하시겠습니까?");
+      if (logout) adminLogout();
+      return;
+    }
+
+    const inputPw = prompt("관리자 비밀번호를 입력해주세요:");
+    if (inputPw === null) return; // 취소
+
+    if (inputPw === ADMIN_PASSWORD) {
+      isAdminMode = true;
+      alert("관리자 인증 완료! 댓글 삭제 권한이 활성화되었습니다.");
+      updateAdminUI();
+      renderComments();
+    } else {
+      alert("비밀번호가 올바르지 않습니다.");
+    }
+  }
+
+  function adminLogout() {
+    isAdminMode = false;
+    alert("관리자 모드에서 로그아웃되었습니다.");
+    updateAdminUI();
+    renderComments();
+  }
+
+  function updateAdminUI() {
+    const badge = document.getElementById("adminBadge");
+    const panel = document.getElementById("adminPanel");
+    const toggleBtn = document.getElementById("adminToggleBtn");
+
+    if (isAdminMode) {
+      badge.style.display = "inline-block";
+      panel.style.display = "flex";
+      toggleBtn.textContent = "🔓 관리자 설정";
+      toggleBtn.style.borderColor = "var(--success)";
+      toggleBtn.style.color = "var(--success)";
+    } else {
+      badge.style.display = "none";
+      panel.style.display = "none";
+      toggleBtn.textContent = "🔐 관리자 메뉴";
+      toggleBtn.style.borderColor = "var(--border)";
+      toggleBtn.style.color = "var(--subtext)";
+    }
+  }
+
+  function deleteComment(id) {
+    if (isAdminMode) {
+      // 관리자 모드일 때는 즉시 확인 후 삭제
+      if (confirm("이 댓글을 삭제하시겠습니까?")) {
+        executeDelete(id);
+      }
+      return;
+    }
+
+    // 일반 사용자 상태에서 삭제를 누른 경우 비밀번호 확인
+    const inputPw = prompt("관리자만 삭제할 수 있습니다.\n관리자 비밀번호를 입력하세요:");
+    if (inputPw === null) return;
+
+    if (inputPw === ADMIN_PASSWORD) {
+      executeDelete(id);
+      alert("댓글이 성공적으로 삭제되었습니다.");
+    } else {
+      alert("비밀번호가 올바르지 않습니다.");
+    }
+  }
+
+  function executeDelete(id) {
+    let comments = getComments();
+    comments = comments.filter(c => c.id !== id);
+    saveComments(comments);
+    renderComments();
+  }
+
+  function adminDeleteAll() {
+    if (!isAdminMode) return;
+    if (confirm("정말로 모든 댓글을 완전히 삭제하시겠습니까?")) {
+      saveComments([]);
+      renderComments();
+      alert("모든 댓글이 삭제되었습니다.");
+    }
+  }
+
+  function renderComments() {
+    const listEl = document.getElementById("commentsList");
+    const countEl = document.getElementById("commentCount");
+    const comments = getComments();
+
+    countEl.textContent = comments.length;
+    listEl.innerHTML = "";
+
+    if (comments.length === 0) {
+      listEl.innerHTML = `<div class="no-comments">등록된 댓글이 없습니다. 첫 댓글을 남겨보세요! ✨</div>`;
+      return;
+    }
+
+    comments.forEach(c => {
+      const item = document.createElement("div");
+      item.className = "comment-item";
+
+      const firstChar = escapeHtml(c.author.charAt(0) || "?");
+      const safeAuthor = escapeHtml(c.author);
+      const safeText = escapeHtml(c.text);
+
+      item.innerHTML = `
+        <div class="comment-meta">
+          <div class="comment-author-wrap">
+            <div class="comment-avatar">${firstChar}</div>
+            <span class="comment-author">${safeAuthor}</span>
+          </div>
+          <div style="display:flex; align-items:center;">
+            <span class="comment-date">${c.date}</span>
+            <button class="btn-delete" title="관리자 삭제" onclick="deleteComment('${c.id}')">🗑️ 삭제</button>
+          </div>
+        </div>
+        <div class="comment-body">${safeText}</div>
+      `;
+      listEl.appendChild(item);
+    });
+  }
+
   // 초기화 실행
   onCategoryChange();
   initCurrencies();
+  renderComments();
 </script>
 
 </body>

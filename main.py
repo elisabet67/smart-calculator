@@ -7,7 +7,7 @@ import os
 import sys
 import threading
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 
 # Windows High DPI 인식 설정 (글자 및 그래픽 선명도 개선)
 try:
@@ -29,8 +29,8 @@ class CalculatorApp(tk.Tk):
         super().__init__()
 
         self.title("스마트 전자계산기 - 환율 & 단위변환")
-        self.geometry("500x740")
-        self.minsize(460, 680)
+        self.geometry("520x760")
+        self.minsize(480, 700)
 
         # 다크 테마 색상 팔레트
         self.colors = {
@@ -78,12 +78,14 @@ class CalculatorApp(tk.Tk):
         self.unit_frame = tk.Frame(self.content_frame, bg=self.colors["bg"])
         self.exchange_frame = tk.Frame(self.content_frame, bg=self.colors["bg"])
         self.history_frame = tk.Frame(self.content_frame, bg=self.colors["bg"])
+        self.comment_frame = tk.Frame(self.content_frame, bg=self.colors["bg"])
 
         # 각 탭 뷰 초기화
         self.build_calc_tab()
         self.build_unit_tab()
         self.build_exchange_tab()
         self.build_history_tab()
+        self.build_comment_tab()
 
         # 키보드 이벤트 바인딩
         self.bind_all("<Key>", self.handle_keypress)
@@ -153,8 +155,9 @@ class CalculatorApp(tk.Tk):
         tabs = [
             ("calc", "🧮 계산기"),
             ("unit", "⚖️ 단위변환"),
-            ("exchange", "💱 실시간 환율"),
-            ("history", "📜 계산기록"),
+            ("exchange", "💱 환율"),
+            ("history", "📜 기록"),
+            ("comment", "💬 댓글"),
         ]
 
         for tab_id, text in tabs:
@@ -185,7 +188,7 @@ class CalculatorApp(tk.Tk):
                 btn.configure(bg=self.colors["inactive_tab"], fg=self.colors["subtext"])
 
         # 프레임 전환
-        for frame in (self.calc_frame, self.unit_frame, self.exchange_frame, self.history_frame):
+        for frame in (self.calc_frame, self.unit_frame, self.exchange_frame, self.history_frame, self.comment_frame):
             frame.pack_forget()
 
         if tab_id == "calc":
@@ -199,6 +202,9 @@ class CalculatorApp(tk.Tk):
         elif tab_id == "history":
             self.history_frame.pack(fill="both", expand=True)
             self.refresh_history_table()
+        elif tab_id == "comment":
+            self.comment_frame.pack(fill="both", expand=True)
+            self.refresh_comment_table()
 
     # ==========================================================
     # 1. 계산기 탭 (CALCULATOR TAB)
@@ -934,6 +940,217 @@ class CalculatorApp(tk.Tk):
             self.calc_disp_lbl.configure(text=res)
             self.calc_expr_lbl.configure(text=f"불러옴: {vals[0]}")
             self.switch_tab("calc")
+
+
+    # ==========================================================
+    # 5. 댓글 / 방명록 탭 (COMMENTS TAB - 관리자 비밀번호: 1234)
+    # ==========================================================
+    def build_comment_tab(self):
+        self.comments_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "comments_data.json")
+        self.admin_pin = "1234"
+        self.is_admin_active = False
+
+        # 상단 댓글 작성 카드
+        form_card = tk.Frame(self.comment_frame, bg=self.colors["card_bg"],
+                             highlightbackground=self.colors["border"], highlightthickness=1)
+        form_card.pack(fill="x", pady=(0, 8), padx=2, ipady=6)
+
+        header_row = tk.Frame(form_card, bg=self.colors["card_bg"])
+        header_row.pack(fill="x", padx=12, pady=(4, 6))
+
+        tk.Label(header_row, text="💬 댓글 작성", font=("Malgun Gothic", 11, "bold"),
+                 fg=self.colors["text"], bg=self.colors["card_bg"]).pack(side="left")
+
+        self.comment_author_var = tk.StringVar(value="")
+        tk.Label(header_row, text="닉네임:", font=("Malgun Gothic", 9),
+                 fg=self.colors["subtext"], bg=self.colors["card_bg"]).pack(side="left", padx=(12, 4))
+        author_entry = tk.Entry(
+            header_row,
+            textvariable=self.comment_author_var,
+            font=("Malgun Gothic", 9),
+            bg=self.colors["bg"],
+            fg=self.colors["text"],
+            insertbackground="#ffffff",
+            relief="flat",
+            bd=0,
+            highlightbackground=self.colors["border"],
+            highlightthickness=1,
+            width=12
+        )
+        author_entry.pack(side="left")
+
+        # 댓글 내용 입력창
+        content_row = tk.Frame(form_card, bg=self.colors["card_bg"])
+        content_row.pack(fill="x", padx=12, pady=4)
+
+        self.comment_text_var = tk.StringVar(value="")
+        self.comment_entry = tk.Entry(
+            content_row,
+            textvariable=self.comment_text_var,
+            font=("Malgun Gothic", 10),
+            bg=self.colors["bg"],
+            fg=self.colors["text"],
+            insertbackground="#ffffff",
+            relief="flat",
+            bd=0,
+            highlightbackground=self.colors["border"],
+            highlightthickness=1
+        )
+        self.comment_entry.pack(side="left", fill="x", expand=True, ipady=4)
+        self.comment_entry.bind("<Return>", lambda e: self.add_comment())
+
+        submit_btn = tk.Button(
+            content_row,
+            text="✍️ 등록",
+            font=("Malgun Gothic", 9, "bold"),
+            fg="#ffffff",
+            bg=self.colors["accent"],
+            activebackground=self.colors["accent_hover"],
+            activeforeground="#ffffff",
+            relief="flat",
+            bd=0,
+            padx=12,
+            pady=3,
+            cursor="hand2",
+            command=self.add_comment
+        )
+        submit_btn.pack(side="left", padx=(8, 0))
+
+        # 중간: 관리자 바 및 상태
+        admin_bar = tk.Frame(self.comment_frame, bg=self.colors["bg"])
+        admin_bar.pack(fill="x", pady=(2, 6))
+
+        self.comment_count_lbl = tk.Label(
+            admin_bar,
+            text="댓글 목록 (0개)",
+            font=("Malgun Gothic", 10, "bold"),
+            fg=self.colors["text"],
+            bg=self.colors["bg"]
+        )
+        self.comment_count_lbl.pack(side="left")
+
+        del_btn = tk.Button(
+            admin_bar,
+            text="🗑️ 선택 댓글 삭제 (관리자)",
+            font=("Malgun Gothic", 9),
+            fg="#ffffff",
+            bg=self.colors["btn_danger"],
+            activebackground=self.colors["btn_danger_hover"],
+            activeforeground="#ffffff",
+            relief="flat",
+            bd=0,
+            padx=8,
+            pady=2,
+            cursor="hand2",
+            command=self.delete_selected_comment
+        )
+        del_btn.pack(side="right", padx=(4, 0))
+
+        # 하단 댓글 목록 트리뷰
+        tree_box = tk.Frame(self.comment_frame, bg=self.colors["card_bg"],
+                            highlightbackground=self.colors["border"], highlightthickness=1)
+        tree_box.pack(fill="both", expand=True, padx=2)
+
+        self.comment_tree = ttk.Treeview(tree_box, columns=("author", "text", "date"), show="headings", height=8)
+        self.comment_tree.heading("author", text="작성자")
+        self.comment_tree.heading("text", text="댓글 내용")
+        self.comment_tree.heading("date", text="작성일시")
+
+        self.comment_tree.column("author", width=90, anchor="w")
+        self.comment_tree.column("text", width=250, anchor="w")
+        self.comment_tree.column("date", width=120, anchor="e")
+
+        cmt_scroll = ttk.Scrollbar(tree_box, orient="vertical", command=self.comment_tree.yview)
+        self.comment_tree.configure(yscrollcommand=cmt_scroll.set)
+
+        self.comment_tree.pack(side="left", fill="both", expand=True)
+        cmt_scroll.pack(side="right", fill="y")
+
+        tip_lbl = tk.Label(self.comment_frame, text="💡 팁: 댓글을 선택하고 삭제 버튼을 누르면 관리자 비밀번호(1234) 확인 후 삭제됩니다.",
+                           font=("Malgun Gothic", 8), fg=self.colors["subtext"], bg=self.colors["bg"])
+        tip_lbl.pack(anchor="w", pady=(4, 0))
+
+    def load_comments(self):
+        import json
+        if os.path.exists(self.comments_file):
+            try:
+                with open(self.comments_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return [
+            {"id": "1", "author": "환율계산러", "text": "실시간 환율 조회가 돼서 너무 편해요! 👍", "date": "2026-10-26 19:30"},
+            {"id": "2", "author": "부동산왕", "text": "평수를 m²로 바로 변환해줘서 자주 쓸 것 같습니다.", "date": "2026-10-26 19:42"}
+        ]
+
+    def save_comments(self, comments):
+        import json
+        try:
+            with open(self.comments_file, "w", encoding="utf-8") as f:
+                json.dump(comments, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    def refresh_comment_table(self):
+        for item in self.comment_tree.get_children():
+            self.comment_tree.delete(item)
+
+        comments = self.load_comments()
+        self.comment_count_lbl.configure(text=f"댓글 목록 ({len(comments)}개)")
+
+        for c in comments:
+            self.comment_tree.insert("", "end", values=(c["author"], c["text"], c["date"]), tags=(c["id"],))
+
+    def add_comment(self):
+        author = self.comment_author_var.get().strip() or "익명"
+        text = self.comment_text_var.get().strip()
+        if not text:
+            messagebox.showwarning("입력 필요", "댓글 내용을 입력해주세요.")
+            return
+
+        from datetime import datetime
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+        new_c = {
+            "id": str(int(datetime.now().timestamp() * 1000)),
+            "author": author,
+            "text": text,
+            "date": now_str
+        }
+
+        comments = self.load_comments()
+        comments.insert(0, new_c)
+        self.save_comments(comments)
+
+        self.comment_text_var.set("")
+        self.refresh_comment_table()
+
+    def delete_selected_comment(self):
+        sel = self.comment_tree.selection()
+        if not sel:
+            messagebox.showinfo("안내", "삭제할 댓글을 먼저 목록에서 선택해주세요.")
+            return
+
+        # 관리자 비밀번호 확인 (1234)
+        pw = simpledialog.askstring("관리자 인증", "관리자 비밀번호를 입력해주세요:", show="*")
+        if pw is None:
+            return
+
+        if pw != self.admin_pin:
+            messagebox.showerror("오류", "관리자 비밀번호가 올바르지 않습니다.")
+            return
+
+        item = self.comment_tree.item(sel[0])
+        tags = item.get("tags", [])
+        if not tags:
+            return
+        cid = str(tags[0])
+
+        comments = self.load_comments()
+        comments = [c for c in comments if str(c.get("id")) != cid]
+        self.save_comments(comments)
+
+        self.refresh_comment_table()
+        messagebox.showinfo("성공", "선택한 댓글이 삭제되었습니다.")
 
 
 if __name__ == "__main__":
