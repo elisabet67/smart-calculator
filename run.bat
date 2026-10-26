@@ -1,0 +1,9 @@
+@echo off
+chcp 65001 > nul
+cd /d "%~dp0"
+start pythonw main.py
+if errorlevel 1 (
+    python main.py
+    pause
+)
+exit

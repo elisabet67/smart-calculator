@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스마트 전자계산기 - 환율 & 단위변환</title>
+  <style>
+    :root {
+      --bg: #121214;
+      --card-bg: #1e1e24;
+      --border: #2d2d38;
+      --text: #f3f4f6;
+      --subtext: #9ca3af;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --btn-num: #26262e;
+      --btn-num-hover: #33333d;
+      --btn-func: #373743;
+      --btn-func-hover: #454554;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 10px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .header span {
+      font-size: 0.85rem;
+      color: var(--subtext);
+    }
+
+    /* 탭 바 */
+    .tab-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .tab-btn {
+      background: #18181c;
+      border: 1px solid var(--border);
+      color: var(--subtext);
+      padding: 9px 4px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    /* 탭 내용 */
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* 1. 계산기 스타일 */
+    .calc-screen {
+      background: #151518;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      text-align: right;
+      min-height: 95px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .calc-expr {
+      font-size: 0.95rem;
+      color: var(--subtext);
+      min-height: 20px;
+      word-break: break-all;
+    }
+
+    .calc-val {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: #fff;
+      word-break: break-all;
+    }
+
+    .calc-sci-bar {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .sci-btn {
+      background: #25252b;
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      padding: 6px 2px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .sci-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .calc-btn {
+      background: var(--btn-num);
+      border: 1px solid transparent;
+      color: var(--text);
+      font-size: 1.25rem;
+      font-weight: 600;
+      padding: 16px 0;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, transform 0.05s;
+    }
+
+    .calc-btn:hover {
+      background: var(--btn-num-hover);
+    }
+
+    .calc-btn:active {
+      transform: scale(0.97);
+    }
+
+    .calc-btn.op {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .calc-btn.op:hover {
+      background: var(--accent-hover);
+    }
+
+    .calc-btn.func {
+      background: var(--btn-func);
+      color: #e2e8f0;
+      font-size: 1.05rem;
+    }
+
+    .calc-btn.func:hover {
+      background: var(--btn-func-hover);
+    }
+
+    .calc-btn.danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .calc-btn.danger:hover {
+      background: #dc2626;
+    }
+
+    .calc-btn.eq {
+      background: var(--success);
+      color: #fff;
+      font-size: 1.4rem;
+    }
+
+    .calc-btn.eq:hover {
+      background: #059669;
+    }
+
+    /* 2. 단위변환 / 3. 환율 공통 카드 */
+    .card {
+      background: #161619;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--subtext);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    select, input[type="text"], input[type="number"] {
+      width: 100%;
+      background: #24242c;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+    }
+
+    .row-flex {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swap-btn {
+      background: var(--border);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .swap-btn:hover {
+      background: var(--accent);
+    }
+
+    .result-box {
+      margin-top: 10px;
+      text-align: right;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .result-val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--success);
+      word-break: break-all;
+    }
+
+    .result-sub {
+      font-size: 0.82rem;
+      color: var(--subtext);
+      margin-top: 3px;
+    }
+
+    /* 테이블 스타일 */
+    .table-container {
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #161619;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #202028;
+      color: var(--subtext);
+      position: sticky;
+      top: 0;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background: #23232c;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    /* 환율 상태 바 */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.8rem;
+    }
+
+    .btn-small {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-small:hover {
+      background: var(--accent-hover);
+    }
+
+    /* 히스토리 리스트 */
+    .history-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.15s;
+    }
+
+    .history-item:hover {
+      background: #25252f;
+    }
+
+    .hist-expr {
+      font-size: 0.85rem;
+      color: var(--subtext);
+    }
+
+    .hist-res {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="header">
+    <h1>스마트 전자계산기</h1>
+    <span>단위변환 · 실시간 환율</span>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('calc')">🧮 계산기</button>
+    <button class="tab-btn" onclick="switchTab('unit')">⚖️ 단위변환</button>
+    <button class="tab-btn" onclick="switchTab('exchange')">💱 환율보기</button>
+    <button class="tab-btn" onclick="switchTab('history')">📜 기록</button>
+  </div>
+
+  <!-- 1. 계산기 탭 -->
+  <div id="tab-calc" class="tab-pane active">
+    <div class="calc-screen">
+      <div id="calcExpr" class="calc-expr"></div>
+      <div id="calcVal" class="calc-val">0</div>
+    </div>
+
+    <div class="calc-sci-bar">
+      <button class="sci-btn" onclick="appendToken('sin(')">sin</button>
+      <button class="sci-btn" onclick="appendToken('cos(')">cos</button>
+      <button class="sci-btn" onclick="appendToken('tan(')">tan</button>
+      <button class="sci-btn" onclick="appendToken('log(')">log</button>
+      <button class="sci-btn" onclick="appendToken('ln(')">ln</button>
+      <button class="sci-btn" onclick="appendToken('π')">π</button>
+      <button class="sci-btn" onclick="appendToken('e')">e</button>
+      <button class="sci-btn" onclick="appendToken('^')">^</button>
+    </div>
+
+    <div class="calc-grid">
+      <button class="calc-btn func" onclick="appendToken('(')">(</button>
+      <button class="calc-btn func" onclick="appendToken(')')">)</button>
+      <button class="calc-btn func" onclick="appendToken('^2')">x²</button>
+      <button class="calc-btn func" onclick="appendToken('sqrt(')">√</button>
+
+      <button class="calc-btn danger" onclick="clearAll()">C</button>
+      <button class="calc-btn func" onclick="clearEntry()">CE</button>
+      <button class="calc-btn func" onclick="backspace()">⌫</button>
+      <button class="calc-btn op" onclick="appendToken('÷')">÷</button>
+
+      <button class="calc-btn" onclick="appendToken('7')">7</button>
+      <button class="calc-btn" onclick="appendToken('8')">8</button>
+      <button class="calc-btn" onclick="appendToken('9')">9</button>
+      <button class="calc-btn op" onclick="appendToken('×')">×</button>
+
+      <button class="calc-btn" onclick="appendToken('4')">4</button>
+      <button class="calc-btn" onclick="appendToken('5')">5</button>
+      <button class="calc-btn" onclick="appendToken('6')">6</button>
+      <button class="calc-btn op" onclick="appendToken('-')">-</button>
+
+      <button class="calc-btn" onclick="appendToken('1')">1</button>
+      <button class="calc-btn" onclick="appendToken('2')">2</button>
+      <button class="calc-btn" onclick="appendToken('3')">3</button>
+      <button class="calc-btn op" onclick="appendToken('+')">+</button>
+
+      <button class="calc-btn func" onclick="toggleSign()">±</button>
+      <button class="calc-btn" onclick="appendToken('0')">0</button>
+      <button class="calc-btn" onclick="appendToken('.')">.</button>
+      <button class="calc-btn eq" onclick="calculate()">=</button>
+    </div>
+  </div>
+
+  <!-- 2. 단위변환 탭 -->
+  <div id="tab-unit" class="tab-pane">
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">분류 선택</label>
+        <select id="unitCategory" onchange="onCategoryChange()">
+          <option value="length">길이 (Length)</option>
+          <option value="area">넓이 (Area)</option>
+          <option value="weight">무게 (Weight)</option>
+          <option value="volume">부피 (Volume)</option>
+          <option value="temperature">온도 (Temperature)</option>
+          <option value="data">데이터 (Data)</option>
+          <option value="speed">속도 (Speed)</option>
+          <option value="pressure">압력 (Pressure)</option>
+          <option value="time">시간 (Time)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">입력값</label>
+        <input type="number" id="unitInput" value="1" step="any" oninput="updateUnitConversion()">
+      </div>
+
+      <div class="row-flex">
+        <select id="unitFrom" onchange="updateUnitConversion()"></select>
+        <button class="swap-btn" onclick="swapUnits()">⇄</button>
+        <select id="unitTo" onchange="updateUnitConversion()"></select>
+      </div>
+
+      <div class="result-box">
+        <div id="unitResultVal" class="result-val">= 0</div>
+      </div>
+    </div>
+
+    <div style="font-size: 0.85rem; color: var(--subtext); margin-bottom: 6px; font-weight:600;">
+      카테고리 전체 단위 환산표
+    </div>
+    <div class="table-container">
+      <table id="unitTable">
+        <thead>
+          <tr>
+            <th>단위명</th>
+            <th class="text-right">환산값</th>
+          </tr>
+        </thead>
+        <tbody id="unitTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3. 실시간 환율 탭 -->
+  <div id="tab-exchange" class="tab-pane">
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">환전 금액</label>
+        <input type="number" id="exchangeAmt" value="1" step="any" oninput="updateExchangeCalc()">
+      </div>
+
+      <div class="row-flex">
+        <select id="exchangeFrom" onchange="updateExchangeCalc()"></select>
+        <button class="swap-btn" onclick="swapCurrencies()">⇄</button>
+        <select id="exchangeTo" onchange="updateExchangeCalc()"></select>
+      </div>
+
+      <div class="result-box">
+        <div id="exchangeResult" class="result-val">= ₩ 0</div>
+        <div id="exchangeRateInfo" class="result-sub">기준환율: -</div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span id="exchangeStatus" style="color: var(--success);">🟢 실시간 환율 연동</span>
+      <button class="btn-small" onclick="fetchLiveRates()">🔄 환율 새로고침</button>
+    </div>
+
+    <div style="font-size: 0.85rem; color: var(--subtext); margin-bottom: 6px; font-weight:600;">
+      원화(KRW) 기준 주요 통화 환율표
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>통화</th>
+            <th>명칭</th>
+            <th class="text-right">매매기준율 (KRW)</th>
+          </tr>
+        </thead>
+        <tbody id="exchangeTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. 계산기록 탭 -->
+  <div id="tab-history" class="tab-pane">
+    <div class="status-bar">
+      <span style="font-size:0.9rem; font-weight:600;">최근 계산 기록</span>
+      <button class="btn-small" style="background:var(--danger);" onclick="clearHistory()">🗑️ 모두 지우기</button>
+    </div>
+    <div class="table-container" style="max-height: 400px;">
+      <div id="historyList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ==========================================
+  // 전역 상태 및 탭 전환
+  // ==========================================
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+    const btns = Array.from(document.querySelectorAll('.tab-btn'));
+    const targetIdx = ['calc', 'unit', 'exchange', 'history'].indexOf(tabId);
+    if (targetIdx >= 0) btns[targetIdx].classList.add('active');
+
+    const pane = document.getElementById('tab-' + tabId);
+    if (pane) pane.classList.add('active');
+
+    if (tabId === 'unit') updateUnitConversion();
+    if (tabId === 'exchange') updateExchangeCalc();
+    if (tabId === 'history') renderHistory();
+  }
+
+  // ==========================================
+  // 1. 계산기 로직
+  // ==========================================
+  let expr = "";
+  let shouldReset = false;
+  let historyList = [];
+
+  function updateCalcScreen() {
+    document.getElementById("calcExpr").textContent = expr ? expr : "";
+    document.getElementById("calcVal").textContent = expr ? expr.trim() : "0";
+  }
+
+  function appendToken(t) {
+    if (shouldReset) {
+      if (['+', '-', '×', '÷', '^'].includes(t)) {
+        // 이전 결과에 이어서
+      } else {
+        expr = "";
+      }
+      shouldReset = false;
+    }
+    if (['+', '-', '×', '÷', '^'].includes(t)) {
+      expr += " " + t + " ";
+    } else {
+      expr += t;
+    }
+    updateCalcScreen();
+  }
+
+  function clearAll() {
+    expr = "";
+    shouldReset = false;
+    document.getElementById("calcExpr").textContent = "";
+    document.getElementById("calcVal").textContent = "0";
+  }
+
+  function clearEntry() {
+    expr = "";
+    document.getElementById("calcVal").textContent = "0";
+  }
+
+  function backspace() {
+    if (shouldReset) {
+      clearAll();
+      return;
+    }
+    expr = expr.trimEnd();
+    if (expr.length > 0) {
+      expr = expr.slice(0, -1).trimEnd();
+    }
+    updateCalcScreen();
+  }
+
+  function toggleSign() {
+    if (!expr) return;
+    if (expr.startsWith('-')) {
+      expr = expr.slice(1);
+    } else {
+      expr = '-' + expr;
+    }
+    updateCalcScreen();
+  }
+
+  function calculate() {
+    if (!expr.trim()) return;
+    let evalStr = expr
+      .replace(/×/g, '*')
+      .replace(/÷/g, '/')
+      .replace(/\^/g, '**')
+      .replace(/π/g, '(' + Math.PI + ')')
+      .replace(/e/g, '(' + Math.E + ')')
+      .replace(/sqrt\(/g, 'Math.sqrt(')
+      .replace(/sin\(/g, 'Math.sin((Math.PI/180)*')
+      .replace(/cos\(/g, 'Math.cos((Math.PI/180)*')
+      .replace(/tan\(/g, 'Math.tan((Math.PI/180)*')
+      .replace(/log\(/g, 'Math.log10(')
+      .replace(/ln\(/g, 'Math.log(');
+
+    try {
+      // 안전한 Function 생성자 수식 평가
+      const result = Function('"use strict"; return (' + evalStr + ')')();
+      if (result === undefined || isNaN(result) || !isFinite(result)) {
+        throw new Error("연산 불가");
+      }
+      let formatted = Number(Number(result).toPrecision(12)).toString();
+      document.getElementById("calcExpr").textContent = expr + " =";
+      document.getElementById("calcVal").textContent = formatted;
+
+      historyList.unshift({ expr: expr, result: formatted });
+      if (historyList.length > 50) historyList.pop();
+
+      expr = formatted;
+      shouldReset = true;
+    } catch (e) {
+      document.getElementById("calcVal").textContent = "오류";
+      shouldReset = true;
+    }
+  }
+
+  // 키보드 지원
+  window.addEventListener("keydown", (e) => {
+    const activeTab = document.querySelector('.tab-btn.active').textContent;
+    if (!activeTab.includes("계산기")) return;
+
+    if (e.key >= '0' && e.key <= '9') appendToken(e.key);
+    else if (e.key === '.') appendToken('.');
+    else if (e.key === '+') appendToken('+');
+    else if (e.key === '-') appendToken('-');
+    else if (e.key === '*') appendToken('×');
+    else if (e.key === '/') { e.preventDefault(); appendToken('÷'); }
+    else if (e.key === '^') appendToken('^');
+    else if (e.key === '(' || e.key === ')') appendToken(e.key);
+    else if (e.key === 'Enter') { e.preventDefault(); calculate(); }
+    else if (e.key === 'Backspace') backspace();
+    else if (e.key === 'Escape') clearAll();
+  });
+
+  // ==========================================
+  // 2. 단위 변환 로직
+  // ==========================================
+  const unitData = {
+    length: {
+      units: {
+        "mm (밀리미터)": 0.001,
+        "cm (센티미터)": 0.01,
+        "m (미터)": 1.0,
+        "km (킬로미터)": 1000.0,
+        "in (인치)": 0.0254,
+        "ft (피트)": 0.3048,
+        "yd (야드)": 0.9144,
+        "mi (마일)": 1609.344,
+        "자/척 (尺)": 0.3030303,
+        "간 (間)": 1.8181818,
+        "리 (里)": 392.727272
+      }
+    },
+    area: {
+      units: {
+        "m² (제곱미터)": 1.0,
+        "km² (제곱킬로미터)": 1000000.0,
+        "a (아르)": 100.0,
+        "ha (헥타르)": 10000.0,
+        "ft² (제곱피트)": 0.092903,
+        "yd² (제곱야드)": 0.836127,
+        "ac (에이커)": 4046.856,
+        "평 (坪)": 3.305785,
+        "단보 (反)": 991.7355
+      }
+    },
+    weight: {
+      units: {
+        "mg (밀리그램)": 0.001,
+        "g (그램)": 1.0,
+        "kg (킬로그램)": 1000.0,
+        "t (톤)": 1000000.0,
+        "oz (온스)": 28.3495,
+        "lb (파운드)": 453.592,
+        "돈 (금 1돈)": 3.75,
+        "냥 (37.5g)": 37.5,
+        "근 (600g)": 600.0,
+        "관 (3.75kg)": 3750.0
+      }
+    },
+    volume: {
+      units: {
+        "mL (밀리리터)": 0.001,
+        "L (리터)": 1.0,
+        "m³ (세제곱미터)": 1000.0,
+        "fl oz (온스)": 0.0295735,
+        "cup (컵)": 0.236588,
+        "gal (갤런)": 3.78541,
+        "되 (1.8L)": 1.8039,
+        "말 (18L)": 18.039
+      }
+    },
+    temperature: {
+      special: true,
+      units: ["°C (섭씨)", "°F (화씨)", "K (켈빈)"]
+    },
+    data: {
+      units: {
+        "bit (비트)": 0.125,
+        "B (바이트)": 1.0,
+        "KB (킬로바이트)": 1024,
+        "MB (메가바이트)": 1024**2,
+        "GB (기가바이트)": 1024**3,
+        "TB (테라바이트)": 1024**4
+      }
+    },
+    speed: {
+      units: {
+        "m/s": 1.0,
+        "km/h": 1 / 3.6,
+        "mph": 0.44704,
+        "knot": 0.514444,
+        "Mach": 340.29
+      }
+    },
+    pressure: {
+      units: {
+        "Pa": 1.0,
+        "hPa": 100.0,
+        "kPa": 1000.0,
+        "bar": 100000.0,
+        "psi": 6894.76,
+        "atm": 101325.0,
+        "mmHg": 133.322
+      }
+    },
+    time: {
+      units: {
+        "ms (밀리초)": 0.001,
+        "s (초)": 1.0,
+        "min (분)": 60.0,
+        "h (시간)": 3600.0,
+        "d (일)": 86400.0,
+        "wk (주)": 604800.0,
+        "yr (년)": 31536000.0
+      }
+    }
+  };
+
+  function onCategoryChange() {
+    const cat = document.getElementById("unitCategory").value;
+    const fromSel = document.getElementById("unitFrom");
+    const toSel = document.getElementById("unitTo");
+
+    fromSel.innerHTML = "";
+    toSel.innerHTML = "";
+
+    const data = unitData[cat];
+    let unitList = data.special ? data.units : Object.keys(data.units);
+
+    unitList.forEach((u, i) => {
+      fromSel.add(new Option(u, u));
+      toSel.add(new Option(u, u));
+    });
+
+    if (unitList.length > 1) {
+      toSel.selectedIndex = 1;
+    }
+    updateUnitConversion();
+  }
+
+  function swapUnits() {
+    const fromSel = document.getElementById("unitFrom");
+    const toSel = document.getElementById("unitTo");
+    const temp = fromSel.value;
+    fromSel.value = toSel.value;
+    toSel.value = temp;
+    updateUnitConversion();
+  }
+
+  function convertUnitVal(cat, val, fromU, toU) {
+    if (fromU === toU) return val;
+    if (cat === "temperature") {
+      let c = val;
+      if (fromU.includes("°F")) c = (val - 32) * 5 / 9;
+      else if (fromU.includes("K")) c = val - 273.15;
+
+      if (toU.includes("°C")) return c;
+      if (toU.includes("°F")) return (c * 9 / 5) + 32;
+      if (toU.includes("K")) return c + 273.15;
+      return c;
+    }
+    const units = unitData[cat].units;
+    const base = val * units[fromU];
+    return base / units[toU];
+  }
+
+  function formatNum(n) {
+    if (Math.abs(n) >= 1e12 || (Math.abs(n) < 1e-4 && n !== 0)) {
+      return n.toExponential(6);
+    }
+    return Number(n.toFixed(6)).toLocaleString();
+  }
+
+  function updateUnitConversion() {
+    const cat = document.getElementById("unitCategory").value;
+    const val = parseFloat(document.getElementById("unitInput").value);
+    const fromU = document.getElementById("unitFrom").value;
+    const toU = document.getElementById("unitTo").value;
+
+    if (isNaN(val) || !fromU || !toU) {
+      document.getElementById("unitResultVal").textContent = "= -";
+      return;
+    }
+
+    const res = convertUnitVal(cat, val, fromU, toU);
+    document.getElementById("unitResultVal").textContent = `= ${formatNum(res)} ${toU.split(" ")[0]}`;
+
+    // 테이블 갱신
+    const tbody = document.getElementById("unitTableBody");
+    tbody.innerHTML = "";
+    const data = unitData[cat];
+    let unitList = data.special ? data.units : Object.keys(data.units);
+
+    unitList.forEach(u => {
+      const row = tbody.insertRow();
+      const c1 = row.insertCell(0);
+      const c2 = row.insertCell(1);
+      c2.className = "text-right";
+      c1.textContent = u;
+      c2.textContent = formatNum(convertUnitVal(cat, val, fromU, u));
+    });
+  }
+
+  // ==========================================
+  // 3. 실시간 환율 로직
+  // ==========================================
+  const currencies = {
+    KRW: { name: "대한민국 원", flag: "🇰🇷", symbol: "₩", base: 1 },
+    USD: { name: "미국 달러", flag: "🇺🇸", symbol: "$", base: 1 },
+    JPY: { name: "일본 엔 (100엔)", flag: "🇯🇵", symbol: "¥", base: 100 },
+    EUR: { name: "유럽연합 유로", flag: "🇪🇺", symbol: "€", base: 1 },
+    CNY: { name: "중국 위안", flag: "🇨🇳", symbol: "¥", base: 1 },
+    GBP: { name: "영국 파운드", flag: "🇬🇧", symbol: "£", base: 1 },
+    AUD: { name: "호주 달러", flag: "🇦🇺", symbol: "A$", base: 1 },
+    CAD: { name: "캐나다 달러", flag: "🇨🇦", symbol: "C$", base: 1 },
+    CHF: { name: "스위스 프랑", flag: "🇨🇭", symbol: "CHF", base: 1 },
+    HKD: { name: "홍콩 달러", flag: "🇭🇰", symbol: "HK$", base: 1 },
+    SGD: { name: "싱가포르 달러", flag: "🇸🇬", symbol: "S$", base: 1 },
+    TWD: { name: "대만 달러", flag: "🇹🇼", symbol: "NT$", base: 1 },
+    THB: { name: "태국 바트", flag: "🇹🇭", symbol: "฿", base: 1 },
+    VND: { name: "베트남 동 (100동)", flag: "🇻🇳", symbol: "₫", base: 100 }
+  };
+
+  let rates = {
+    USD: 1.0,
+    KRW: 1324.0,
+    JPY: 152.5,
+    EUR: 0.92,
+    CNY: 7.23,
+    GBP: 0.77,
+    AUD: 1.51,
+    CAD: 1.38,
+    CHF: 0.86,
+    HKD: 7.77,
+    SGD: 1.32,
+    TWD: 32.1,
+    THB: 33.7,
+    VND: 25350.0
+  };
+
+  function initCurrencies() {
+    const fSel = document.getElementById("exchangeFrom");
+    const tSel = document.getElementById("exchangeTo");
+    fSel.innerHTML = "";
+    tSel.innerHTML = "";
+
+    for (const [code, info] of Object.entries(currencies)) {
+      const optText = `${info.flag} ${code} (${info.name})`;
+      fSel.add(new Option(optText, code));
+      tSel.add(new Option(optText, code));
+    }
+
+    fSel.value = "USD";
+    tSel.value = "KRW";
+    fetchLiveRates();
+  }
+
+  async function fetchLiveRates() {
+    const statusEl = document.getElementById("exchangeStatus");
+    statusEl.textContent = "⏳ 환율 업데이트 중...";
+    statusEl.style.color = "var(--accent)";
+
+    try {
+      const res = await fetch("https://open.er-api.com/v6/latest/USD");
+      if (!res.ok) throw new Error("HTTP error");
+      const data = await res.json();
+      if (data.rates) {
+        for (const code of Object.keys(currencies)) {
+          if (data.rates[code]) rates[code] = data.rates[code];
+        }
+        statusEl.textContent = `🟢 실시간 환율 동기화됨 (${new Date().toLocaleTimeString()})`;
+        statusEl.style.color = "var(--success)";
+      }
+    } catch (e) {
+      statusEl.textContent = `🟡 캐시 환율 사용 중`;
+      statusEl.style.color = "#f59e0b";
+    }
+
+    updateExchangeCalc();
+    renderExchangeTable();
+  }
+
+  function swapCurrencies() {
+    const fSel = document.getElementById("exchangeFrom");
+    const tSel = document.getElementById("exchangeTo");
+    const temp = fSel.value;
+    fSel.value = tSel.value;
+    tSel.value = temp;
+    updateExchangeCalc();
+  }
+
+  function updateExchangeCalc() {
+    const amt = parseFloat(document.getElementById("exchangeAmt").value);
+    const fromCode = document.getElementById("exchangeFrom").value;
+    const toCode = document.getElementById("exchangeTo").value;
+
+    if (isNaN(amt) || !fromCode || !toCode) {
+      document.getElementById("exchangeResult").textContent = "= -";
+      return;
+    }
+
+    const usdVal = amt / rates[fromCode];
+    const converted = usdVal * rates[toCode];
+
+    const oneRate = (1 / rates[fromCode]) * rates[toCode];
+    const toInfo = currencies[toCode];
+
+    const formatted = ["KRW", "JPY", "VND"].includes(toCode)
+      ? Math.round(converted).toLocaleString()
+      : converted.toFixed(2).toLocaleString();
+
+    document.getElementById("exchangeResult").textContent = `= ${toInfo.symbol} ${formatted} ${toCode}`;
+    document.getElementById("exchangeRateInfo").textContent = `기준환율: 1 ${fromCode} = ${oneRate < 10 ? oneRate.toFixed(4) : oneRate.toFixed(2)} ${toCode}`;
+  }
+
+  function renderExchangeTable() {
+    const tbody = document.getElementById("exchangeTableBody");
+    tbody.innerHTML = "";
+    const krwUsd = rates["KRW"] || 1324;
+
+    for (const [code, info] of Object.entries(currencies)) {
+      if (code === "KRW") continue;
+      const base = info.base || 1;
+      const krwRate = (krwUsd / rates[code]) * base;
+
+      const row = tbody.insertRow();
+      row.style.cursor = "pointer";
+      row.onclick = () => {
+        document.getElementById("exchangeFrom").value = code;
+        updateExchangeCalc();
+      };
+
+      const c1 = row.insertCell(0);
+      const c2 = row.insertCell(1);
+      const c3 = row.insertCell(2);
+      c3.className = "text-right";
+
+      c1.textContent = `${info.flag} ${base !== 1 ? base + ' ' : ''}${code}`;
+      c2.textContent = info.name;
+      c3.textContent = `${krwRate.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} 원`;
+    }
+  }
+
+  // ==========================================
+  // 4. 기록 로직
+  // ==========================================
+  function renderHistory() {
+    const container = document.getElementById("historyList");
+    container.innerHTML = "";
+    if (historyList.length === 0) {
+      container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--subtext);">계산 기록이 없습니다.</div>`;
+      return;
+    }
+    historyList.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      div.innerHTML = `
+        <div class="hist-expr">${item.expr} =</div>
+        <div class="hist-res">${item.result}</div>
+      `;
+      div.onclick = () => {
+        expr = item.result;
+        updateCalcScreen();
+        switchTab("calc");
+      };
+      container.appendChild(div);
+    });
+  }
+
+  function clearHistory() {
+    historyList = [];
+    renderHistory();
+  }
+
+  // 초기화 실행
+  onCategoryChange();
+  initCurrencies();
+</script>
+
+</body>
+</html>
