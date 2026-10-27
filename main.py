@@ -1072,24 +1072,69 @@ class CalculatorApp(tk.Tk):
 
     def load_comments(self):
         import json
+        import urllib.request
+        # 1. 먼저 로컬 캐시에서 로드
+        local_data = []
         if os.path.exists(self.comments_file):
             try:
                 with open(self.comments_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    local_data = json.load(f)
             except Exception:
                 pass
-        return [
-            {"id": "1", "author": "환율계산러", "text": "실시간 환율 조회가 돼서 너무 편해요! 👍", "date": "2026-10-26 19:30"},
-            {"id": "2", "author": "부동산왕", "text": "평수를 m²로 바로 변환해줘서 자주 쓸 것 같습니다.", "date": "2026-10-26 19:42"}
+
+        # 2. 클라우드 서버에서 실시간 최신 목록 동기화 시도
+        try:
+            req = urllib.request.Request(
+                "https://api.restful-api.dev/objects/ff808181a09d98f701a17cbd894d23d9",
+                headers={"User-Agent": "Mozilla/5.0"}
+            )
+            with urllib.request.urlopen(req, timeout=4) as res:
+                c_json = json.loads(res.read().decode("utf-8"))
+                cloud_cmts = c_json.get("data", {}).get("comments")
+                if cloud_cmts and isinstance(cloud_cmts, list):
+                    self.save_local_cache(cloud_cmts)
+                    return cloud_cmts
+        except Exception:
+            pass
+
+        return local_data if local_data else [
+            {"id": "1", "author": "환율계산러", "text": "실시간 환율 조회가 돼서 너무 편해요! 👍", "date": "2026-10-27 18:30"},
+            {"id": "2", "author": "부동산왕", "text": "평수를 m²로 바로 변환해줘서 자주 쓸 것 같습니다.", "date": "2026-10-27 18:40"}
         ]
 
-    def save_comments(self, comments):
+    def save_local_cache(self, comments):
         import json
         try:
             with open(self.comments_file, "w", encoding="utf-8") as f:
                 json.dump(comments, f, ensure_ascii=False, indent=2)
         except Exception:
             pass
+
+    def save_comments(self, comments):
+        import json
+        import urllib.request
+        # 로컬 캐시 저장
+        self.save_local_cache(comments)
+
+        # 비동기 백그라운드로 클라우드 서버에 동기화
+        def sync_worker():
+            try:
+                payload = json.dumps({
+                    "name": "smart_calculator_comments_db_v1",
+                    "data": {"comments": comments}
+                }).encode("utf-8")
+                req = urllib.request.Request(
+                    "https://api.restful-api.dev/objects/ff808181a09d98f701a17cbd894d23d9",
+                    data=payload,
+                    headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+                    method="PUT"
+                )
+                with urllib.request.urlopen(req, timeout=5) as res:
+                    pass
+            except Exception as e:
+                print("Cloud sync error:", e)
+
+        threading.Thread(target=sync_worker, daemon=True).start()
 
     def refresh_comment_table(self):
         for item in self.comment_tree.get_children():

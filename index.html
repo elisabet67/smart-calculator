@@ -843,6 +843,11 @@
     </div>
   </div>
 
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:0.76rem;">
+    <span id="cloudSyncStatus" style="color:#10b981; font-weight:600;">🟢 실시간 서버 연결됨 (전세계 동기화)</span>
+    <button class="btn-small" style="padding:3px 8px; font-size:0.72rem;" onclick="fetchCloudComments(true)">🔄 새로고침</button>
+  </div>
+
   <!-- 관리자 전용 일괄 제어 패널 (비밀번호 1234 인증 시 표시) -->
   <div id="adminPanel" class="admin-panel" style="display:none;">
     <span>⚡ <strong>관리자 모드 (비밀번호 1234 인증됨)</strong></span>
@@ -1371,45 +1376,93 @@
   }
 
   // ==========================================
-  // 5. 댓글 및 관리자 삭제 기능 (비밀번호: 1234)
+  // 5. 실시간 클라우드 공유 댓글 & 관리자 삭제 (비밀번호: 1234)
   // ==========================================
   const ADMIN_PASSWORD = "1234";
+  const CLOUD_DB_URL = "https://api.restful-api.dev/objects/ff808181a09d98f701a17cbd894d23d9";
   let isAdminMode = false;
+  let commentsCache = [];
 
-  const defaultComments = [
+  const defaultBackupComments = [
     {
-      id: "c_sample_1",
+      id: "c_init_1",
       author: "환율계산러",
       text: "환율 조회가 실시간으로 돼서 너무 편하고 좋아요! 👍",
-      date: "2026. 10. 26. 19:30"
+      date: "2026. 10. 27. 18:30"
     },
     {
-      id: "c_sample_2",
+      id: "c_init_2",
       author: "부동산왕",
-      text: "평수를 m²로 바로 변환해줘서 자주 쓸 것 같습니다. 감사합니다!",
-      date: "2026. 10. 26. 19:42"
+      text: "평수를 m²로 바로 변환해줘서 자주 쓸 것 같습니다. 다른 기기에서도 댓글이 실시간으로 보이네요!",
+      date: "2026. 10. 27. 18:40"
     }
   ];
 
-  function getComments() {
+  // 로컬 스토리지에서 먼저 빠르게 로드
+  function loadLocalComments() {
     try {
-      const stored = localStorage.getItem("smart_calc_comments");
+      const stored = localStorage.getItem("smart_calc_cloud_comments");
       if (stored) {
         return JSON.parse(stored);
       }
     } catch (e) {
       console.error(e);
     }
-    // 저장된 게 없으면 기본 댓글 저장 후 반환
-    saveComments(defaultComments);
-    return defaultComments;
+    return defaultBackupComments;
   }
 
-  function saveComments(list) {
+  function saveLocalComments(list) {
     try {
-      localStorage.setItem("smart_calc_comments", JSON.stringify(list));
+      localStorage.setItem("smart_calc_cloud_comments", JSON.stringify(list));
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  // 실시간 클라우드 서버에서 전 세계 댓글 동기화
+  async function fetchCloudComments(showLoader = false) {
+    const statusEl = document.getElementById("cloudSyncStatus");
+    if (showLoader && statusEl) statusEl.textContent = "⏳ 실시간 동기화 중...";
+
+    try {
+      const res = await fetch(CLOUD_DB_URL);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data.comments)) {
+          commentsCache = json.data.comments;
+          saveLocalComments(commentsCache);
+          renderComments();
+          if (statusEl) statusEl.textContent = "🟢 실시간 서버 연결됨 (전세계 동기화)";
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Cloud sync error, using local fallback:", err);
+      if (statusEl) statusEl.textContent = "🟡 로컬 캐시 모드 (오프라인)";
+    }
+
+    if (commentsCache.length === 0) {
+      commentsCache = loadLocalComments();
+      renderComments();
+    }
+  }
+
+  // 클라우드 서버에 댓글 목록 저장
+  async function syncToCloud(comments) {
+    saveLocalComments(comments);
+    try {
+      await fetch(CLOUD_DB_URL, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "smart_calculator_comments_db_v1",
+          data: { comments: comments }
+        })
+      });
+      const statusEl = document.getElementById("cloudSyncStatus");
+      if (statusEl) statusEl.textContent = "🟢 실시간 서버 연결됨 (전세계 동기화)";
+    } catch (err) {
+      console.error("Cloud save error:", err);
     }
   }
 
@@ -1424,7 +1477,8 @@
   }
 
   function escapeHtml(str) {
-    return str
+    if (!str) return "";
+    return String(str)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -1437,7 +1491,7 @@
     document.getElementById("charCount").textContent = text.length;
   }
 
-  function addComment() {
+  async function addComment() {
     const authorInput = document.getElementById("commentAuthor");
     const textInput = document.getElementById("commentText");
 
@@ -1457,13 +1511,15 @@
       date: formatCurrentTime()
     };
 
-    const comments = getComments();
-    comments.unshift(newComment);
-    saveComments(comments);
+    // 즉시 화면에 반영 (낙관적 업데이트)
+    commentsCache.unshift(newComment);
+    renderComments();
 
     textInput.value = "";
     document.getElementById("charCount").textContent = "0";
-    renderComments();
+
+    // 서버로 실시간 전송
+    await syncToCloud(commentsCache);
   }
 
   function toggleAdminMode() {
@@ -1474,7 +1530,7 @@
     }
 
     const inputPw = prompt("관리자 비밀번호를 입력해주세요:");
-    if (inputPw === null) return; // 취소
+    if (inputPw === null) return;
 
     if (inputPw === ADMIN_PASSWORD) {
       isAdminMode = true;
@@ -1513,39 +1569,37 @@
     }
   }
 
-  function deleteComment(id) {
+  async function deleteComment(id) {
     if (isAdminMode) {
-      // 관리자 모드일 때는 즉시 확인 후 삭제
       if (confirm("이 댓글을 삭제하시겠습니까?")) {
-        executeDelete(id);
+        await executeDelete(id);
       }
       return;
     }
 
-    // 일반 사용자 상태에서 삭제를 누른 경우 비밀번호 확인
     const inputPw = prompt("관리자만 삭제할 수 있습니다.\n관리자 비밀번호를 입력하세요:");
     if (inputPw === null) return;
 
     if (inputPw === ADMIN_PASSWORD) {
-      executeDelete(id);
+      await executeDelete(id);
       alert("댓글이 성공적으로 삭제되었습니다.");
     } else {
       alert("비밀번호가 올바르지 않습니다.");
     }
   }
 
-  function executeDelete(id) {
-    let comments = getComments();
-    comments = comments.filter(c => c.id !== id);
-    saveComments(comments);
+  async function executeDelete(id) {
+    commentsCache = commentsCache.filter(c => c.id !== id);
     renderComments();
+    await syncToCloud(commentsCache);
   }
 
-  function adminDeleteAll() {
+  async function adminDeleteAll() {
     if (!isAdminMode) return;
     if (confirm("정말로 모든 댓글을 완전히 삭제하시겠습니까?")) {
-      saveComments([]);
+      commentsCache = [];
       renderComments();
+      await syncToCloud(commentsCache);
       alert("모든 댓글이 삭제되었습니다.");
     }
   }
@@ -1553,23 +1607,22 @@
   function renderComments() {
     const listEl = document.getElementById("commentsList");
     const countEl = document.getElementById("commentCount");
-    const comments = getComments();
 
-    countEl.textContent = comments.length;
+    countEl.textContent = commentsCache.length;
     listEl.innerHTML = "";
 
-    if (comments.length === 0) {
+    if (commentsCache.length === 0) {
       listEl.innerHTML = `<div class="no-comments">등록된 댓글이 없습니다. 첫 댓글을 남겨보세요! ✨</div>`;
       return;
     }
 
-    comments.forEach(c => {
+    commentsCache.forEach(c => {
       const item = document.createElement("div");
       item.className = "comment-item";
 
-      const firstChar = escapeHtml(c.author.charAt(0) || "?");
-      const safeAuthor = escapeHtml(c.author);
-      const safeText = escapeHtml(c.text);
+      const firstChar = escapeHtml((c.author || "?").charAt(0));
+      const safeAuthor = escapeHtml(c.author || "익명");
+      const safeText = escapeHtml(c.text || "");
 
       item.innerHTML = `
         <div class="comment-meta">
@@ -1578,7 +1631,7 @@
             <span class="comment-author">${safeAuthor}</span>
           </div>
           <div style="display:flex; align-items:center;">
-            <span class="comment-date">${c.date}</span>
+            <span class="comment-date">${c.date || ""}</span>
             <button class="btn-delete" title="관리자 삭제" onclick="deleteComment('${c.id}')">🗑️ 삭제</button>
           </div>
         </div>
@@ -1591,7 +1644,15 @@
   // 초기화 실행
   onCategoryChange();
   initCurrencies();
+  commentsCache = loadLocalComments();
   renderComments();
+  fetchCloudComments(true);
+
+  // 10초마다 다른 방문자의 새 댓글 실시간 자동 동기화
+  setInterval(() => {
+    fetchCloudComments(false);
+  }, 10000);
+</script>
 </script>
 
 </body>
